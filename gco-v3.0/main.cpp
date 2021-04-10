@@ -312,8 +312,8 @@ int* MRF_gc(int num_labels, Image& work_image, k_graph& knn){
         // next set up smoothness costs individually
         for (int l1 = 0; l1 < num_labels; l1++){
             for (int l2 = 0; l2 < num_labels; l2++){
-                //int cost = (l1-l2)*(l1-l2) <= 4  ? (l1-l2)*(l1-l2):4;
-                int cost = (l1 == l2) ? 1 : 0;
+                int cost = (l1-l2)*(l1-l2) <= 4  ? (l1-l2)*(l1-l2):4; // This line has issue
+                //int cost = (l1 == l2) ? 1 : 0;
 				gc->setSmoothCost(l1,l2,cost); 
             }
         }
