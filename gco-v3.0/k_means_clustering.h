@@ -50,6 +50,8 @@ class k_graph{
         void modify_graph_node(int h, int w, int ID);
         int retrieve_graph_node(int h, int w){return graph_matrix[h][w];};
         void cluster_initialisation();
+        void modify_total_number_of_cluster(int new_value){this->total_number_of_clusters = new_value;};
+        int retrieve_total_number_of_cluster(){return total_number_of_clusters;};
 };
 
 void k_graph::modify_cluster_center(int ID, int R, int G, int B){
@@ -74,15 +76,17 @@ void k_graph::cluster_initialisation(){
         //cout << "Cluster centered initialised ... Checking if got repeated\n";
         // Use a stupid method to compare (anyway we won't be comparing a large dataset)
         repeated_color = 0;
-        for (int i = 0; i < total_number_of_clusters - 1; i++){
-            for (int j = 1; j < total_number_of_clusters; j++){
-                // R
-                if (cluster_center[i][0] == cluster_center[j][0]){
-                    // G
-                    if (cluster_center[i][1] == cluster_center[j][1]){
-                        // B
-                        if (cluster_center[i][2] == cluster_center[j][2]){
-                            repeated_color = 1;
+        for (int i = 0; i < total_number_of_clusters; i++){
+            for (int j = 0; j < total_number_of_clusters; j++){
+                if (i != j){
+                    // R
+                    if (cluster_center[i][0] == cluster_center[j][0]){
+                        // G
+                        if (cluster_center[i][1] == cluster_center[j][1]){
+                            // B
+                            if (cluster_center[i][2] == cluster_center[j][2]){
+                                repeated_color = 1;
+                            }
                         }
                     }
                 }

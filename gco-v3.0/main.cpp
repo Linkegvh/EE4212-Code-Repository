@@ -45,6 +45,11 @@ int main(){
 
     // Process for k means clustering
     k_result(knn, K_num, work_image);
+    if (K_num != knn.retrieve_total_number_of_cluster()){
+        cout << "Changing K numebr to " << knn.retrieve_total_number_of_cluster() << endl;
+        cout << "This is because you have used a k number that is simply too big for this image" << endl;
+        K_num = knn.retrieve_total_number_of_cluster();
+    } 
 
     // Print out the result
     int** cluster_center = knn.retrieve_cluster_center();
@@ -124,6 +129,7 @@ void k_result(k_graph& knn, int num_of_cluster, Image& work_image){
     }
 
     // Give this result to the knn
+    num_of_cluster = knn.retrieve_total_number_of_cluster();
     for (int i = 0; i < num_of_cluster; i++){
         knn.modify_cluster_center(i, cluster_result[best_index][i][0], cluster_result[best_index][i][1], cluster_result[best_index][i][2]);
     }
@@ -141,10 +147,12 @@ void k_result(k_graph& knn, int num_of_cluster, Image& work_image){
  * @brief Does a single round of k means clustering calculation which the result is saved inside the knn structure
 */
 unsigned long int k_means_clustering_single(k_graph& knn, int num_of_cluster, Image& work_image){
-
+    int loop_number = 0; // This is a loop number used to regulate the total amount of looping allowed
 
     k_means_clustering: // Where the repeat will goto 
     
+    loop_number ++;
+    num_of_cluster = knn.retrieve_total_number_of_cluster(); // Just in case that the number of clusters are reduced
 
     int** cluster_center = knn.retrieve_cluster_center();
 
@@ -224,6 +232,15 @@ unsigned long int k_means_clustering_single(k_graph& knn, int num_of_cluster, Im
         //cout << "K means clustering current is: \n";
         for (int i = 0; i < num_of_cluster; i ++){
             knn.modify_cluster_center(i, cluster_sum[i][0], cluster_sum[i][1], cluster_sum[i][2]);
+        }
+
+        // If we keep looping non-stop, it means the user has keyed in a k number that is too large for this image
+        // In other words, the image cannot have that many k numbers
+        // Thus, we will reduce the k number by 1 each time till it passes
+        if (loop_number > 100){
+            cout << "Reducing total number of clusters" << endl;
+            knn.modify_total_number_of_cluster(num_of_cluster - 1);
+            loop_number = 0;
         }
         goto k_means_clustering;
     }
