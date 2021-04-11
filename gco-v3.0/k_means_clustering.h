@@ -34,7 +34,7 @@ class k_graph{
             this->w = w;
             this->h = h;
             this->matrix_size = w*h;
-            graph_matrix = new int* [w];
+            graph_matrix = new int* [h];
             for (int i = 0; i < h; i ++){
                 graph_matrix[i] = new int[w];
                 // initialise the adjacency matrix to all belonging to ID 0 of the cluster center first
