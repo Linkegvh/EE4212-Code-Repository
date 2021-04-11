@@ -15,9 +15,11 @@ class k_graph{
         int ** cluster_center;
         int ** graph_matrix;
         int total_number_of_clusters;
+        int converged_number_of_clusters;
         int w;
         int h;
         int matrix_size;
+        unsigned long int quality_number;
     public:
         k_graph(int h, int w, int number_of_clusters){
             // Initialise cluster center
@@ -42,6 +44,8 @@ class k_graph{
                     graph_matrix[i][j] = 0;
                 }
             }
+
+            this->converged_number_of_clusters = 0;
             return;
         };
 
@@ -52,6 +56,10 @@ class k_graph{
         void cluster_initialisation();
         void modify_total_number_of_cluster(int new_value){this->total_number_of_clusters = new_value;};
         int retrieve_total_number_of_cluster(){return total_number_of_clusters;};
+        void modify_quality_number(unsigned long int number){this->quality_number = number;};
+        unsigned long int retrieve_quality_number(){return quality_number;};
+        void modify_converged_k(int number){this->converged_number_of_clusters = number;};
+        int retrieve_converged_num_of_k(){return converged_number_of_clusters;};
 };
 
 void k_graph::modify_cluster_center(int ID, int R, int G, int B){

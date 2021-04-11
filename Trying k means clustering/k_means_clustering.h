@@ -15,13 +15,16 @@ class k_graph{
         int ** cluster_center;
         int ** graph_matrix;
         int total_number_of_clusters;
+        //int old_number_of_cluster;
         int w;
         int h;
         int matrix_size;
+        unsigned long int quality_number;
     public:
         k_graph(int h, int w, int number_of_clusters){
             // Initialise cluster center
             this->total_number_of_clusters = number_of_clusters;
+            //this->old_number_of_cluster = number_of_clusters; // storing the original value
             cout << "This is the total number of clusters: " << total_number_of_clusters << endl;
             //cout << "Initialising cluster centre\n";
             cluster_center = new int*[total_number_of_clusters];
@@ -54,6 +57,8 @@ class k_graph{
         void cluster_initialisation();
         void modify_total_number_of_cluster(int new_value){this->total_number_of_clusters = new_value;};
         int retrieve_total_number_of_cluster(){return total_number_of_clusters;};
+        void modify_quality_number(unsigned long int number){this->quality_number = number;};
+        unsigned long int retrieve_quality_number(){return quality_number;};
 };
 
 void k_graph::modify_cluster_center(int ID, int R, int G, int B){

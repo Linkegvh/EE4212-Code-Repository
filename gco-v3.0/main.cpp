@@ -16,7 +16,7 @@
 
 using namespace std;
 
-unsigned long int k_means_clustering_single(k_graph& knn, int num_of_cluster, Image& work_image);
+void k_means_clustering_single(k_graph& knn, int num_of_cluster, Image& work_image);
 void k_result(k_graph& knn, int num_of_cluster, Image& work_image);
 int* MRF_gc(int num_labels, Image& work_image, k_graph& knn);
 
@@ -46,15 +46,16 @@ int main(){
     // Process for k means clustering
     k_result(knn, K_num, work_image);
     if (K_num != knn.retrieve_total_number_of_cluster()){
+        cout << endl;
         cout << "Changing K numebr to " << knn.retrieve_total_number_of_cluster() << endl;
-        cout << "This is because you have used a k number that is simply too big for this image" << endl;
+        cout << "This is because you have used a k number that is too big and thus the cluster centre cannot converge to a fixed result" << endl << endl;
         K_num = knn.retrieve_total_number_of_cluster();
     } 
 
     // Print out the result
     int** cluster_center = knn.retrieve_cluster_center();
     for (int i = 0; i < K_num; i++){
-        cout << "Cluster Center: " << i;
+        cout << "Cluster Center: " << i + 1;
         cout << " R: " << cluster_center[i][0];
         cout << " G: " << cluster_center[i][1];
         cout << " B: " << cluster_center[i][2];
@@ -106,30 +107,49 @@ void k_result(k_graph& knn, int num_of_cluster, Image& work_image){
     int loop_num = 10;
     int cluster_result[loop_num][num_of_cluster][3]; // save all the results of the different runs
     unsigned long int cluster_quality[loop_num];
+    int k_num_for_each_loop[loop_num];
     for (int i = 0; i < loop_num; i ++){
+        knn.modify_total_number_of_cluster(num_of_cluster); // reinitialise the number of clusters
         knn.cluster_initialisation(); // Reinitialise
-        cluster_quality[i] = k_means_clustering_single(knn,num_of_cluster,work_image);
+        k_means_clustering_single(knn,num_of_cluster,work_image);
+        cluster_quality[i] = knn.retrieve_quality_number();
         
+        int curr_num_of_cluster = knn.retrieve_total_number_of_cluster();
+        k_num_for_each_loop[i] = curr_num_of_cluster;
+        cout << "This is loop number " << i + 1 << " of total loop number " << loop_num;
+        cout << " ... Number of converged K: " << curr_num_of_cluster << endl;
+
+        int last_best_converged_k = knn.retrieve_converged_num_of_k();
+        if (curr_num_of_cluster > last_best_converged_k){
+            knn.modify_converged_k(curr_num_of_cluster);
+        }
+
         // Get the result into the cluster result
         int** cluster_center = knn.retrieve_cluster_center();
-        for (int j = 0; j < num_of_cluster; j++){
+        for (int j = 0; j < curr_num_of_cluster; j++){
             cluster_result[i][j][0] = cluster_center[j][0]; // R
             cluster_result[i][j][1] = cluster_center[j][1]; // G
             cluster_result[i][j][2] = cluster_center[j][2]; // B
         }
     }
 
-    // Get the best answer, the smaller the better
+    // Get the best answer, we want the most number of k and the smallest of cost
     int best_index = 0;
     for (int i = 0; i < loop_num; i ++){
-        int curr_index_result = cluster_quality[i];
-        if (curr_index_result < cluster_quality[best_index]){
+        unsigned long int curr_index_result = cluster_quality[i];
+        int curr_k_number = k_num_for_each_loop[i];
+
+        // We want the most number of k and smallest of cost
+        if (curr_k_number > k_num_for_each_loop[best_index]){
+            best_index = i;
+        }else if (curr_k_number == k_num_for_each_loop[best_index] && curr_index_result < cluster_quality[best_index]){
             best_index = i;
         }
     }
 
     // Give this result to the knn
-    num_of_cluster = knn.retrieve_total_number_of_cluster();
+    num_of_cluster = k_num_for_each_loop[best_index];
+    knn.modify_total_number_of_cluster(num_of_cluster);
     for (int i = 0; i < num_of_cluster; i++){
         knn.modify_cluster_center(i, cluster_result[best_index][i][0], cluster_result[best_index][i][1], cluster_result[best_index][i][2]);
     }
@@ -142,11 +162,11 @@ void k_result(k_graph& knn, int num_of_cluster, Image& work_image){
  * @param num_of_clusters Number of k that you want to have for k means clustering
  * @param work_image The image data struct pointer
  * 
- * @result A quality number of how good the k means clustering result is, the lower the better
+ * @result NULL
  * 
  * @brief Does a single round of k means clustering calculation which the result is saved inside the knn structure
 */
-unsigned long int k_means_clustering_single(k_graph& knn, int num_of_cluster, Image& work_image){
+void k_means_clustering_single(k_graph& knn, int num_of_cluster, Image& work_image){
     int loop_number = 0; // This is a loop number used to regulate the total amount of looping allowed
 
     k_means_clustering: // Where the repeat will goto 
@@ -226,8 +246,10 @@ unsigned long int k_means_clustering_single(k_graph& knn, int num_of_cluster, Im
             int G_dist = cluster_sum[i][1] - cluster_center[j][1]; G_dist = (int) sqrt(G_dist * G_dist);
             int B_dist = cluster_sum[i][2] - cluster_center[j][2]; B_dist = (int) sqrt(B_dist * B_dist);
 
-            int thres_hold = 15;
-            if (R_dist <= thres_hold && G_dist <= thres_hold && B_dist <= thres_hold) same++;
+            int thres_hold = 20;
+            if (R_dist <= thres_hold && G_dist <= thres_hold && B_dist <= thres_hold){ 
+                same++;
+            }
         }
     }
 
@@ -237,19 +259,33 @@ unsigned long int k_means_clustering_single(k_graph& knn, int num_of_cluster, Im
             knn.modify_cluster_center(i, cluster_sum[i][0], cluster_sum[i][1], cluster_sum[i][2]);
         }
 
+        // if we just keep looping, it means the initialisation is not good, let's reinitialise
+        if (loop_number == 100){
+            knn.cluster_initialisation();
+        }
+
         // If we keep looping non-stop, it means the user has keyed in a k number that is too large for this image
         // In other words, the image cannot have that many k numbers
         // Thus, we will reduce the k number by 1 each time till it passes
-        if (loop_number > 300){
-            cout << "Reducing total number of clusters" << endl;
-            knn.modify_total_number_of_cluster(num_of_cluster - 1);
+        if (loop_number >= 200){
+            // cout << "Reducing total number of clusters" << endl;
+            
+            // we will only accept output that is at least as good as the last best output
+            int last_best_k_number = knn.retrieve_converged_num_of_k();
+            if (num_of_cluster > last_best_k_number){
+                knn.modify_total_number_of_cluster(num_of_cluster - 1);
+                knn.cluster_initialisation();
+            }else{
+                knn.cluster_initialisation(); // reinitialise
+            }
             loop_number = 0;
         }
         goto k_means_clustering;
     }
 
     // Check if got repeated centers, we cannot allow this to exist, if have reinitialise and run again
-    int repeated_center = 0;
+    // Check if got any of the centres is 0, we cannot that also because the graph cut algo cannot take it
+    int repeated_center = 0; int got_zero_entries = 0;
     for (int i = 0; i < num_of_cluster; i++){
         for (int j = 0; j < num_of_cluster; j++){
             if (i != j){
@@ -262,8 +298,10 @@ unsigned long int k_means_clustering_single(k_graph& knn, int num_of_cluster, Im
                 }
             }
         }
+
+        if (cluster_center[i][0] == 0 && cluster_center[i][1] == 0 && cluster_center[i][2] == 0) got_zero_entries ++;
     }
-    if (repeated_center > 0){
+    if (repeated_center > 0 || got_zero_entries > 0){
         knn.cluster_initialisation();
         goto k_means_clustering;
     }
@@ -286,7 +324,8 @@ unsigned long int k_means_clustering_single(k_graph& knn, int num_of_cluster, Im
             graph_x++;
         }
     }
-    return sum_of_difference;
+    knn.modify_quality_number(sum_of_difference);
+    return;
 }
 
 /**
@@ -336,23 +375,26 @@ int* MRF_gc(int num_labels, Image& work_image, k_graph& knn){
         for (int l1 = 0; l1 < num_labels; l1++){
             for (int l2 = 0; l2 < num_labels; l2++){
                 //int cost = (l1-l2)*(l1-l2) <= 4  ? (l1-l2)*(l1-l2):4; // This line has issue
-                //int cost = (l1 == l2) ? 0 : 1;
+                int cost = (l1 == l2) ? 0 : 1;
     
-                
+                /*
                 int R_dist = cluster_center[l1][0] - cluster_center[l2][0]; R_dist = (int) sqrt(R_dist * R_dist);
                 int G_dist = cluster_center[l1][1] - cluster_center[l2][1]; G_dist = (int) sqrt(G_dist * G_dist);
                 int B_dist = cluster_center[l1][2] - cluster_center[l2][2]; B_dist = (int) sqrt(B_dist * B_dist);
                 
                 int cost;
-                if (R_dist < 50 && G_dist < 50 && B_dist < 50) cost = 0;
-                else cost = 1;
-
+                if (R_dist < 50 && G_dist < 50 && B_dist < 50){
+                    cost = 0;
+                }else {
+                    cost = 1;
+                }
+                */
                 gc->setSmoothCost(l1,l2,cost); 
             }
         }
 
         cout << "Before optimisation energy is " << gc->compute_energy() << endl;
-        gc->expansion(2); // run expansion for 2 iterations
+        gc->expansion(10); // run expansion for 2 iterations
         cout << "After optimisation energy is " << gc->compute_energy() << endl;
 
         for (int i = 0; i < num_pixels; i++){

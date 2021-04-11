@@ -224,7 +224,6 @@ unsigned long int k_means_clustering_single(k_graph& knn, int num_of_cluster, Im
             }
         }
     }
-    
     if (repeated_center > 0){
         knn.cluster_initialisation();
         loop_number ++;
