@@ -168,10 +168,10 @@ unsigned long int k_means_clustering_single(k_graph& knn, int num_of_cluster, Im
             // Get the distance from this color to the cluster centers
             int color_dist[num_of_cluster]; int best_cluster = 0;
             for (int i = 0; i < num_of_cluster; i++){
-                int R_dist = cluster_center[i][0] - curr_color[0]; R_dist = (int) sqrt(R_dist * R_dist);
-                int G_dist = cluster_center[i][1] - curr_color[1]; G_dist = (int) sqrt(G_dist * G_dist);
-                int B_dist = cluster_center[i][2] - curr_color[2]; B_dist = (int) sqrt(B_dist * B_dist);
-                color_dist[i] = R_dist + G_dist + B_dist;
+                int R_dist = cluster_center[i][0] - curr_color[0]; R_dist = (int) R_dist * R_dist;
+                int G_dist = cluster_center[i][1] - curr_color[1]; G_dist = (int) G_dist * G_dist;
+                int B_dist = cluster_center[i][2] - curr_color[2]; B_dist = (int) B_dist * B_dist;
+                color_dist[i] = (int) sqrt(R_dist + G_dist + B_dist);
                 if (i != 0){
                     if (color_dist[i] < color_dist[i-1]) best_cluster = i;
                 }
@@ -209,26 +209,29 @@ unsigned long int k_means_clustering_single(k_graph& knn, int num_of_cluster, Im
 
     // get new cluster center
     for (int i = 0; i < num_of_cluster; i++){
-        cluster_sum[i][0] = (int) cluster_sum[i][0] / cluster_number[i]; // R
-        cluster_sum[i][1] = (int) cluster_sum[i][1] / cluster_number[i]; // G
-        cluster_sum[i][2] = (int) cluster_sum[i][2] / cluster_number[i]; // B
+        if (cluster_number[i] != 0){
+            cluster_sum[i][0] = (int) cluster_sum[i][0] / cluster_number[i]; // R
+            cluster_sum[i][1] = (int) cluster_sum[i][1] / cluster_number[i]; // G
+            cluster_sum[i][2] = (int) cluster_sum[i][2] / cluster_number[i]; // B
+        }else{
+            cluster_sum[i][0] = 0; cluster_sum[i][1] = 0; cluster_sum[i][2] = 0; // Prevent floating point errors
+        } 
     }
 
-    // Compare the new with the old one
+    // Compare the new with the old one --> We relax it to be within the vacinity can already
     int same = 0;
     for (int i = 0; i < num_of_cluster; i++){
         for (int j = 0; j < num_of_cluster; j++){
-            if (cluster_sum[i][0] == cluster_center[j][0]){ // R
-                if (cluster_sum[i][1] == cluster_center[j][1]){ // G
-                    if (cluster_sum[i][2] == cluster_center[j][2]){ // B
-                        same ++;
-                    }
-                }
-            }
+            int R_dist = cluster_sum[i][0] - cluster_center[j][0]; R_dist = (int) sqrt(R_dist * R_dist);
+            int G_dist = cluster_sum[i][1] - cluster_center[j][1]; G_dist = (int) sqrt(G_dist * G_dist);
+            int B_dist = cluster_sum[i][2] - cluster_center[j][2]; B_dist = (int) sqrt(B_dist * B_dist);
+
+            int thres_hold = 15;
+            if (R_dist <= thres_hold && G_dist <= thres_hold && B_dist <= thres_hold) same++;
         }
     }
 
-    if (same != num_of_cluster){
+    if (same < num_of_cluster){
         //cout << "K means clustering current is: \n";
         for (int i = 0; i < num_of_cluster; i ++){
             knn.modify_cluster_center(i, cluster_sum[i][0], cluster_sum[i][1], cluster_sum[i][2]);
@@ -237,11 +240,31 @@ unsigned long int k_means_clustering_single(k_graph& knn, int num_of_cluster, Im
         // If we keep looping non-stop, it means the user has keyed in a k number that is too large for this image
         // In other words, the image cannot have that many k numbers
         // Thus, we will reduce the k number by 1 each time till it passes
-        if (loop_number > 100){
+        if (loop_number > 300){
             cout << "Reducing total number of clusters" << endl;
             knn.modify_total_number_of_cluster(num_of_cluster - 1);
             loop_number = 0;
         }
+        goto k_means_clustering;
+    }
+
+    // Check if got repeated centers, we cannot allow this to exist, if have reinitialise and run again
+    int repeated_center = 0;
+    for (int i = 0; i < num_of_cluster; i++){
+        for (int j = 0; j < num_of_cluster; j++){
+            if (i != j){
+                if (cluster_center[i][0] == cluster_center[j][0]){ // R
+                    if (cluster_center[i][1] == cluster_center[j][1]){ // G
+                        if (cluster_center[i][2] == cluster_center[j][2]){ // B
+                            repeated_center ++;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (repeated_center > 0){
+        knn.cluster_initialisation();
         goto k_means_clustering;
     }
 
@@ -254,11 +277,11 @@ unsigned long int k_means_clustering_single(k_graph& knn, int num_of_cluster, Im
             int curr_color[3] = {work_image.data[pixel_index], work_image.data[pixel_index+1], work_image.data[pixel_index+2]};
             int ID = knn.retrieve_graph_node(y,graph_x);
 
-            int R_dist = cluster_center[ID][0] - curr_color[0]; R_dist = (int) sqrt(R_dist * R_dist); 
-            int G_dist = cluster_center[ID][1] - curr_color[1]; G_dist = (int) sqrt(G_dist * G_dist);
-            int B_dist = cluster_center[ID][2] - curr_color[2]; B_dist = (int) sqrt(B_dist * B_dist);
+            int R_dist = cluster_center[ID][0] - curr_color[0]; R_dist = (int) R_dist * R_dist; 
+            int G_dist = cluster_center[ID][1] - curr_color[1]; G_dist = (int) G_dist * G_dist;
+            int B_dist = cluster_center[ID][2] - curr_color[2]; B_dist = (int) B_dist * B_dist;
             
-            int sum = R_dist + G_dist + B_dist; sum_of_difference += sum;
+            int sum = (int) sqrt(R_dist + G_dist + B_dist); sum_of_difference += sum;
             
             graph_x++;
         }
@@ -299,9 +322,9 @@ int* MRF_gc(int num_labels, Image& work_image, k_graph& knn){
 
                 for (int l = 0; l < num_labels; l ++){
                     int R_dist = cluster_center[l][0] - curr_color[0]; R_dist = (int) sqrt(R_dist * R_dist);
-                    int G_dist = cluster_center[l][1] - curr_color[1]; R_dist = (int) sqrt(G_dist * G_dist);
-                    int B_dist = cluster_center[l][2] - curr_color[2]; R_dist = (int) sqrt(B_dist * B_dist);
-                    int total_cost = R_dist + G_dist + B_dist;
+                    int G_dist = cluster_center[l][1] - curr_color[1]; G_dist = (int) sqrt(G_dist * G_dist);
+                    int B_dist = cluster_center[l][2] - curr_color[2]; B_dist = (int) sqrt(B_dist * B_dist);
+                    int total_cost = (int) (R_dist + G_dist + B_dist) / 3;
                     gc->setDataCost(gc_index, l, total_cost);
                 }
 
@@ -312,9 +335,19 @@ int* MRF_gc(int num_labels, Image& work_image, k_graph& knn){
         // next set up smoothness costs individually
         for (int l1 = 0; l1 < num_labels; l1++){
             for (int l2 = 0; l2 < num_labels; l2++){
-                int cost = (l1-l2)*(l1-l2) <= 4  ? (l1-l2)*(l1-l2):4; // This line has issue
-                //int cost = (l1 == l2) ? 1 : 0;
-				gc->setSmoothCost(l1,l2,cost); 
+                //int cost = (l1-l2)*(l1-l2) <= 4  ? (l1-l2)*(l1-l2):4; // This line has issue
+                //int cost = (l1 == l2) ? 0 : 1;
+    
+                
+                int R_dist = cluster_center[l1][0] - cluster_center[l2][0]; R_dist = (int) sqrt(R_dist * R_dist);
+                int G_dist = cluster_center[l1][1] - cluster_center[l2][1]; G_dist = (int) sqrt(G_dist * G_dist);
+                int B_dist = cluster_center[l1][2] - cluster_center[l2][2]; B_dist = (int) sqrt(B_dist * B_dist);
+                
+                int cost;
+                if (R_dist < 50 && G_dist < 50 && B_dist < 50) cost = 0;
+                else cost = 1;
+
+                gc->setSmoothCost(l1,l2,cost); 
             }
         }
 
