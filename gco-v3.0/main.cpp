@@ -11,6 +11,10 @@
  * - Take reference from the macOS and Linux instruction
  * - I never use windows for coding before, so this code has only been tested using macOS and if you cannot compile, you can email me to use my machine to test
  * 
+ * Runing the code:
+ * - The program will prompt you for the image file name with extensions, please make sure that the image is inside the same folder as this program
+ * - The program will then prompt you for the number of segmented colours, please key in an integer
+ * 
  * Coding logic:
  * - The code is sepearted into two parts:
  * - The first part is k means clustering using functions k_means_clustering_single and k_result
@@ -124,7 +128,9 @@ int main(){
  * @brief does 100 loops of K means clustering calculation and save the best result into the knn struct
 */
 void k_result(k_graph& knn, int num_of_cluster, Image& work_image){
-    // Loop this 100 times to get the best centre
+    cout << endl << "K Means Clustering..." << endl;
+
+    // Loop this 10 times to get the best centre
     int loop_num = 10;
     int cluster_result[loop_num][num_of_cluster][3]; // save all the results of the different runs
     unsigned long int cluster_quality[loop_num];
