@@ -115,11 +115,11 @@ void k_result(k_graph& knn, int num_of_cluster, Image& work_image){
 unsigned long int k_means_clustering_single(k_graph& knn, int num_of_cluster, Image& work_image){
     int loop_number = 0;
     k_means_clustering: // Where the repeat will goto 
-    
+
     loop_number ++;
     num_of_cluster = knn.retrieve_total_number_of_cluster();
     int** cluster_center = knn.retrieve_cluster_center();
-
+    
     // Start doing the K means clustering
     for (int y = 0; y < work_image.h; y++){
         int graph_x = 0;
@@ -144,7 +144,7 @@ unsigned long int k_means_clustering_single(k_graph& knn, int num_of_cluster, Im
             graph_x ++; // increase the graph_x
         }
     }
-
+    
     // Get the new mean of the color
     unsigned long int cluster_sum[num_of_cluster][3]; // max is 4294967295 which is equilvalent to 16777216 pixels and that means 4k x 4k (not possible to hit with the given images)
     int cluster_number[num_of_cluster];
@@ -181,32 +181,53 @@ unsigned long int k_means_clustering_single(k_graph& knn, int num_of_cluster, Im
         }
     }
 
-    // Compare the new with the old one
+    // Compare the new with the old one --> We relax it to be within the vacinity can already
     int same = 0;
     for (int i = 0; i < num_of_cluster; i++){
         for (int j = 0; j < num_of_cluster; j++){
-            if (cluster_sum[i][0] == cluster_center[j][0]){ // R
-                if (cluster_sum[i][1] == cluster_center[j][1]){ // G
-                    if (cluster_sum[i][2] == cluster_center[j][2]){ // B
-                        same ++;
-                    }
-                }
-            }
+            int R_dist = cluster_sum[i][0] - cluster_center[j][0]; R_dist = (int) sqrt(R_dist * R_dist);
+            int G_dist = cluster_sum[i][1] - cluster_center[j][1]; G_dist = (int) sqrt(G_dist * G_dist);
+            int B_dist = cluster_sum[i][2] - cluster_center[j][2]; B_dist = (int) sqrt(B_dist * B_dist);
+
+            int thres_hold = 10;
+            if (R_dist < thres_hold && G_dist < thres_hold && B_dist < thres_hold) same++;
         }
     }
 
-    if (same != num_of_cluster){
+    if (same < num_of_cluster){
         //cout << "K means clustering current is: \n";
         for (int i = 0; i < num_of_cluster; i ++){
             knn.modify_cluster_center(i, cluster_sum[i][0], cluster_sum[i][1], cluster_sum[i][2]);
         }
 
-        if (loop_number > 100){
+        if (loop_number > 200){ // sometimes it is a bit difficult to find
             cout << "Reducing total number of clusters" << endl;
             knn.modify_total_number_of_cluster(num_of_cluster - 1);
             loop_number = 0;
         }
 
+        goto k_means_clustering;
+    }
+
+    // Check if got repeated centers, we cannot allow this to exist, if have reinitialise and run again
+    int repeated_center = 0;
+    for (int i = 0; i < num_of_cluster; i++){
+        for (int j = 0; j < num_of_cluster; j++){
+            if (i != j){
+                if (cluster_center[i][0] == cluster_center[j][0]){ // R
+                    if (cluster_center[i][1] == cluster_center[j][1]){ // G
+                        if (cluster_center[i][2] == cluster_center[j][2]){ // B
+                            repeated_center ++;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    if (repeated_center > 0){
+        knn.cluster_initialisation();
+        loop_number ++;
         goto k_means_clustering;
     }
 
