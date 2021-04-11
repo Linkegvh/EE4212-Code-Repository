@@ -3,6 +3,7 @@
 #include "graph.h"
 #include <iostream>
 #include <math.h>
+#include <ctime>
 
 using namespace std;
 
@@ -18,6 +19,10 @@ using namespace std;
  * Instruction for windows:
  * - Take reference from the macOS and Linux instruction. 
  * - I never use windows for coding before, so this code has only been tested using macOS and if it fails to run on windows, you are welcome to email me to test on a different machine
+ * 
+ * Running the program:
+ * - The program will prompt you to input the image file name with extensions, please do so and ensure that the image file is in the same folder as this program
+ * - Then the program will prompt you to input the m_lambda value, please input an integer value
 */
 
 
@@ -25,12 +30,17 @@ using namespace std;
 int color_dist(int [], int []);
 
 int main(){
+    std::clock_t start;
+    start = std::clock(); // timer start
     
-    char filename[50];
+    char filename[50]; int m_lambda;
 
     cout << "Please Enter the Image File Name (with extensions): ";
     cin >> filename;
     Image original(filename);
+
+    cout << "Please Enter the m_lambda value in integer (the best is around 500): ";
+    cin >> m_lambda;
 
     //Image original("denoise_input.jpg");
 
@@ -44,7 +54,6 @@ int main(){
 
     int background_color[3] = {244, 209, 112}; // Yellow
     int foreground_color[3] = {0, 8, 248}; // Blue
-    int m_labmda = 480;
 
     // Iterate through every pixel
     for (int y = 0; y < work_image.h; y++){
@@ -65,7 +74,7 @@ int main(){
                     // pixel 0 has no upper nor left neighbour
                     int left_neighbour = i-1;
 
-                    g -> add_edge(left_neighbour, i, m_labmda, m_labmda);
+                    g -> add_edge(left_neighbour, i, m_lambda, m_lambda);
                 }
             }else{
                 if (x != 0){
@@ -74,19 +83,19 @@ int main(){
                     // Left neighbour
                     int left_neighbour = i - 1;
 
-                    g -> add_edge(left_neighbour, i, m_labmda, m_labmda);
+                    g -> add_edge(left_neighbour, i, m_lambda, m_lambda);
 
                     // Upper Neighbour
                     int upper_neighbour = i - work_image.w;
 
-                    g -> add_edge(upper_neighbour, i, m_labmda, m_labmda);
+                    g -> add_edge(upper_neighbour, i, m_lambda, m_lambda);
 
 
                 }else{
                     // This case is the left most column
                     int upper_neighbour = i - work_image.w;
 
-                    g -> add_edge(upper_neighbour, i, m_labmda, m_labmda);
+                    g -> add_edge(upper_neighbour, i, m_lambda, m_lambda);
                 }   
             }
 
@@ -119,6 +128,9 @@ int main(){
     delete g;
 
     work_image.write("Result.jpg");
+
+    double duration = (clock() - start) / (double) CLOCKS_PER_SEC; // Timer end
+    cout << "Run Time: " << duration << "s" << endl;
 
     return 0;
 }
