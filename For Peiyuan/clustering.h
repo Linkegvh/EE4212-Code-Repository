@@ -159,6 +159,9 @@ void k_means_clustering::do_k_clustering(Image& the_image, int k_input){
             result[i][j][0] = k_centers[j][0]; result[i][j][1] = k_centers[j][1]; result[i][j][2] = k_centers[j][2]; 
         }
         index[i] = k;quality_list[i] = quality;
+        if (k > best_k){best_k = k;}
+        k = k_input;
+
     }
 
     // Highest K and lowest quality

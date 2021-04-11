@@ -74,14 +74,8 @@ int main(){
     // Generate K graph
     k_graph knn(work_image.h, work_image.w, K_num, minimum_k_num);
 
-    // Process for k means clustering
-    k_result(knn, K_num, work_image);
-    if (K_num != knn.retrieve_total_number_of_cluster()){
-        cout << endl;
-        cout << "Changing K numebr to " << knn.retrieve_total_number_of_cluster() << endl;
-        cout << "This is because you have used a k number that is too big and thus the cluster centre cannot converge to a fixed result" << endl << endl;
-        K_num = knn.retrieve_total_number_of_cluster();
-    } 
+    // process for k means clustering
+    knn.k_result(work_image, K_num);
 
     // Print out the result
     int** cluster_center = knn.retrieve_cluster_center();
@@ -133,6 +127,7 @@ int main(){
  * 
  * @brief does 100 loops of K means clustering calculation and save the best result into the knn struct
 */
+/*
 void k_result(k_graph& knn, int num_of_cluster, Image& work_image){
     cout << endl << "K Means Clustering..." << endl;
 
@@ -188,6 +183,7 @@ void k_result(k_graph& knn, int num_of_cluster, Image& work_image){
     }
 
 }
+*/
 
 /**
  * 
@@ -199,6 +195,7 @@ void k_result(k_graph& knn, int num_of_cluster, Image& work_image){
  * 
  * @brief Does a single round of k means clustering calculation which the result is saved inside the knn structure, always gets at least the best number of k compared to the last best number of k
 */
+/*
 void k_means_clustering_single(k_graph& knn, int num_of_cluster, Image& work_image){
     int loop_number = 0; // This is a loop number used to regulate the total amount of looping allowed
 
@@ -272,17 +269,14 @@ void k_means_clustering_single(k_graph& knn, int num_of_cluster, Image& work_ima
     }
 
     // Compare the new with the old one --> We relax it to be within the vacinity can already
-    int same = 0;
+    int same = 0; int thres_hold = 30;
     for (int i = 0; i < num_of_cluster; i++){
         for (int j = 0; j < num_of_cluster; j++){
-            int R_dist = cluster_sum[i][0] - cluster_center[j][0]; R_dist = (int) sqrt(R_dist * R_dist);
-            int G_dist = cluster_sum[i][1] - cluster_center[j][1]; G_dist = (int) sqrt(G_dist * G_dist);
-            int B_dist = cluster_sum[i][2] - cluster_center[j][2]; B_dist = (int) sqrt(B_dist * B_dist);
-
-            int thres_hold = 20;
-            if (R_dist <= thres_hold && G_dist <= thres_hold && B_dist <= thres_hold){ 
-                same++;
-            }
+            int R_dist = cluster_sum[i][0] - cluster_center[j][0]; //R_dist = (int) sqrt(R_dist * R_dist);
+            int G_dist = cluster_sum[i][1] - cluster_center[j][1]; //G_dist = (int) sqrt(G_dist * G_dist);
+            int B_dist = cluster_sum[i][2] - cluster_center[j][2]; //B_dist = (int) sqrt(B_dist * B_dist);
+            int dist = (int) sqrt(R_dist * R_dist + G_dist * G_dist + B_dist * B_dist);
+           if (dist <= thres_hold){same ++;}
         }
     }
 
@@ -360,6 +354,7 @@ void k_means_clustering_single(k_graph& knn, int num_of_cluster, Image& work_ima
     knn.modify_quality_number(sum_of_difference);
     return;
 }
+*/
 
 /**
  * 
