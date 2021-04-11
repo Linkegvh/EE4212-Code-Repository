@@ -1,5 +1,10 @@
 /**
  * Written by Lingke Ding
+ * 
+ * This header library contains the k means clustering structure that closely follows
+ * the idea of adjecency graph. In a way, it stores all the cluster centres, graph node 
+ * of which cluster centre does that pixel belong to. 
+ * 
 */
 
 

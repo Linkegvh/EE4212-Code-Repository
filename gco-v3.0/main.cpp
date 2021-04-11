@@ -1,7 +1,28 @@
 /***
  * Written by Lingke Ding
  * 
- * To compile: g++ -std=c++11 -o testing main.cpp Image.cpp GCoptimization.cpp maxflow.cpp LinkedBlockList.cpp
+ * The Image.h header library was referenced to Code-Break0: https://github.com/Code-Break0/Image-Processing
+ * 
+ * Instruction for macOS and Linux:
+ * - To check the the pre-compiled result, in your terminal, type the following: ./please_run_this
+ * - To compile the program, type this in your terminal: g++ -std=c++11 -o please_run_this main.cpp Image.cpp GCoptimization.cpp maxflow.cpp LinkedBlockList.cpp
+ * 
+ * Instruction for windows:
+ * - Take reference from the macOS and Linux instruction
+ * - I never use windows for coding before, so this code has only been tested using macOS and if you cannot compile, you can email me to use my machine to test
+ * 
+ * Coding logic:
+ * - The code is sepearted into two parts:
+ * - The first part is k means clustering using functions k_means_clustering_single and k_result
+ * - The second part is Markov Random Field Graph Cut with multi-label using funciton MRF_gc
+ * 
+ * - In the k means clustering, no matter what k value you give, the program will always use the k value that can converge
+ * - What this means is that if you give a k value that is gigantic, such as 100, the program lower the k value in each 200 loop till the program can converge
+ * - Moreover, the program will loop the whole k means clustering 10 times, using the best value from these 10 times
+ * - The best value is essentially the highest number of k and within those highest numbers of k, the lowest quality number (which is the sum of the difference between pixels to their cluster centre)
+ * 
+ * - In the Markov Random Field Graph Cut with multi-label, the labels are the cluster centres and data cost if the distance between each pixel to their respective cluster centre
+ * - The smoothness is essentially 1 between each labels and 0 with itself. 
 */
 
 #include "Image.h"
@@ -164,7 +185,7 @@ void k_result(k_graph& knn, int num_of_cluster, Image& work_image){
  * 
  * @result NULL
  * 
- * @brief Does a single round of k means clustering calculation which the result is saved inside the knn structure
+ * @brief Does a single round of k means clustering calculation which the result is saved inside the knn structure, always gets at least the best number of k compared to the last best number of k
 */
 void k_means_clustering_single(k_graph& knn, int num_of_cluster, Image& work_image){
     int loop_number = 0; // This is a loop number used to regulate the total amount of looping allowed
@@ -374,21 +395,7 @@ int* MRF_gc(int num_labels, Image& work_image, k_graph& knn){
         // next set up smoothness costs individually
         for (int l1 = 0; l1 < num_labels; l1++){
             for (int l2 = 0; l2 < num_labels; l2++){
-                //int cost = (l1-l2)*(l1-l2) <= 4  ? (l1-l2)*(l1-l2):4; // This line has issue
                 int cost = (l1 == l2) ? 0 : 1;
-    
-                /*
-                int R_dist = cluster_center[l1][0] - cluster_center[l2][0]; R_dist = (int) sqrt(R_dist * R_dist);
-                int G_dist = cluster_center[l1][1] - cluster_center[l2][1]; G_dist = (int) sqrt(G_dist * G_dist);
-                int B_dist = cluster_center[l1][2] - cluster_center[l2][2]; B_dist = (int) sqrt(B_dist * B_dist);
-                
-                int cost;
-                if (R_dist < 50 && G_dist < 50 && B_dist < 50){
-                    cost = 0;
-                }else {
-                    cost = 1;
-                }
-                */
                 gc->setSmoothCost(l1,l2,cost); 
             }
         }
