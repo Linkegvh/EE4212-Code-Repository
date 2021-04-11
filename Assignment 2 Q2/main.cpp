@@ -14,6 +14,9 @@
  * Runing the code:
  * - The program will prompt you for the image file name with extensions, please make sure that the image is inside the same folder as this program
  * - The program will then prompt you for the number of segmented colours, please key in an integer
+ * - The program will lastly prompt you for the minimum number of segmented colours that you can accept, please key in an integer for that
+ * - (It should be noted that you should usually put 0 so that it won't take forever for the code to run, that is because when you input a minimum number of colours
+ * - The code will keep re-initialising till it gets that many colours, sometimes it may just be impossible to get that color due to extremely low probability)
  * 
  * Coding logic:
  * - The code is sepearted into two parts:
@@ -50,7 +53,7 @@ int main(){
     start = std::clock(); // timer start
 
     // Input variables decalring
-    char filename[50]; int K_num;
+    char filename[50]; int K_num; int minimum_k_num;
 
     // Filename
     cout << "Please Enter the Image File Name (with extensions): ";
@@ -61,12 +64,15 @@ int main(){
     cout << "Please Enter the number of segmented colour: ";
     cin >> K_num;
 
+    cout << "Please Enter the number of minimum K number u want (it is best to put as 0): ";
+    cin >> minimum_k_num;
+
     // Copy the image into a new object so that we can work on it
     Image work_image = original;
     cout << "Image width: " << work_image.w << " Image height: " << work_image.h << endl;
 
     // Generate K graph
-    k_graph knn(work_image.h, work_image.w, K_num);
+    k_graph knn(work_image.h, work_image.w, K_num, minimum_k_num);
 
     // Process for k means clustering
     k_result(knn, K_num, work_image);

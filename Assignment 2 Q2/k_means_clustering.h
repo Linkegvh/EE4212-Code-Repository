@@ -26,7 +26,7 @@ class k_graph{
         int matrix_size;
         unsigned long int quality_number;
     public:
-        k_graph(int h, int w, int number_of_clusters){
+        k_graph(int h, int w, int number_of_clusters, int min_k){
             // Initialise cluster center
             this->total_number_of_clusters = number_of_clusters;
             //cout << "Initialising cluster centre\n";
@@ -50,7 +50,7 @@ class k_graph{
                 }
             }
 
-            this->converged_number_of_clusters = 0;
+            this->converged_number_of_clusters = min_k;
             return;
         };
 
