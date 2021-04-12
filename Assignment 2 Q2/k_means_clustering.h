@@ -107,7 +107,7 @@ void k_graph::k_result(Image& work_image, int num_of_cluster){
     for (int i = 0; i < loop_num; i++){
         k_means_clustering_single(work_image);
         cout << "This is loop number " << i + 1 << " of total loop number " << loop_num;
-        cout << " ... Number of converged K: " << total_number_of_clusters + 1 << endl;
+        cout << " ... Number of converged K: " << total_number_of_clusters << endl;
         
         for (int j = 0; j < total_number_of_clusters; j++){
             cluster_result[i][j][0] = cluster_center[j][0]; cluster_result[i][j][1] = cluster_center[j][1]; cluster_result[i][j][2] = cluster_center[j][2];
